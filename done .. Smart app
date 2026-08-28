@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Education — Study Planner</title>
+<style>
+  :root {
+    /* ---- Design tokens ---- */
+    --bg: #EEF1F6;
+    --paper: #FFFFFF;
+    --rule: #D7DCE6;
+    --ink: #1B2340;
+    --ink-soft: #565F7C;
+    --amber: #FFC857;
+    --amber-deep: #E8A93A;
+    --sage: #3F9B6A;
+    --sage-bg: #E4F3EA;
+    --coral: #E8604C;
+    --coral-bg: #FCE7E3;
+    --lav: #7C6FE0;
+
+    --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+    --font-body: 'Inter', 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+    --radius: 14px;
+    --shadow: 0 2px 10px rgba(27, 35, 64, 0.06);
+    --shadow-lg: 0 12px 30px rgba(27, 35, 64, 0.12);
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  body {
+    background: var(--bg);
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px);
+    background-size: 100% 28px;
+    color: var(--ink);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea, select { font-family: inherit; }
+  :focus-visible { outline: 3px solid var(--lav); outline-offset: 2px; }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--ink);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 14px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  .brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: -0.3px;
+    padding: 0 10px 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+
+  nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.68);
+    padding: 11px 12px;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-weight: 500;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .nav-btn.active { background: var(--amber); color: var(--ink); font-weight: 600; }
+  .nav-btn .ic { width: 18px; text-align: center; }
+
+  .sidebar-footer {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.4);
+    padding: 10px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    margin-top: 10px;
+  }
+
+  /* ---------- Main ---------- */
+  #main { flex: 1; min-width: 0; padding: 34px 40px 60px; max-width: 980px; }
+
+  .view { display: none; animation: fadeIn 0.25s ease; }
+  .view.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  h1.page-title {
+    font-family: var(--font-display);
+    font-size: 27px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    margin-bottom: 3px;
+  }
+  .page-sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 26px; }
+
+  .card {
+    background: var(--paper);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+  }
+
+  /* ---------- Home ---------- */
+  .home-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .greeting-card {
+    background: linear-gradient(135deg, var(--ink) 0%, #2C3868 100%);
+    color: #fff;
+    padding: 26px 26px;
+    position: relative;
+    overflow: hidden;
+  }
+  .greeting-card::after {
+    content: "";
+    position: absolute; right: -30px; top: -30px;
+    width: 140px; height: 140px; border-radius: 50%;
+    background: rgba(255, 200, 87, 0.15);
+  }
+  .greeting-name-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .greeting-card h2 { font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+  #studentNameInput {
+    background: transparent; border: none; border-bottom: 2px dashed rgba(255,255,255,0.4);
+    color: var(--amber); font-family: var(--font-display); font-size: 22px; font-weight: 700;
+    padding: 0 2px; max-width: 160px;
+  }
+  .greeting-card p { color: rgba(255,255,255,0.75); font-size: 13.5px; margin-top: 8px; max-width: 380px; position: relative; z-index: 1; }
+  .quote-tag { font-size: 12px; margin-top: 14px; color: var(--amber); font-weight: 600; position: relative; z-index: 1;}
+
+  .exam-countdown-card { display: flex; flex-direction: column; justify-content: center; }
+  .exam-countdown-card .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--ink-soft); font-weight: 600; }
+  .exam-countdown-card .big-num { font-family: var(--font-mono); font-size: 42px; font-weight: 600; color: var(--coral); line-height: 1.1; margin-top: 6px; }
+  .exam-countdown-card .exam-name { font-size: 14px; font-weight: 600; margin-top: 4px; }
+  .exam-countdown-card .exam-date { font-size: 12px; color: var(--ink-soft); margin-top: 2px;}
+  .no-exam { color: var(--ink-soft); font-size: 13.5px; }
+
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat-box { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; }
+  .stat-box .num { font-family: var(--font-mono); font-size: 26px; font-weight: 600; }
+  .stat-box .lbl { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  /* Bookshelf */
+  .shelf-title { font-family: var(--font-display); font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+  .shelf-wrap { background: var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px 24px 0; }
+  .shelf {
+    display: flex; align-items: flex-end; gap: 12px; overflow-x: auto; padding-bottom: 24px;
+    min-height: 190px;
+  }
+  .shelf::after {
+    content: ""; display: block; position: relative;
+  }
+  .book {
+    position: relative;
+    width: 46px; height: 170px;
+    border-radius: 6px 6px 3px 3px;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: #fff;
+    border: 2px solid var(--rule);
+    overflow: hidden;
+    display: flex; align-items: flex-end; justify-content: center;
+    transition: transform 0.15s;
+  }
+  .book:hover { transform: translateY(-4px); }
+  .book .fill {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    transition: height 0.4s ease;
+  }
+  .book .spine-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 0;
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    max-height: 150px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .book .pct-badge {
+    position: absolute; top: 6px; left: 0; right: 0; text-align: center;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--ink-soft); z-index: 1;
+  }
+  .empty-shelf { color: var(--ink-soft); font-size: 13.5px; padding: 20px 0 30px; }
+
+  /* ---------- Subjects ---------- */
+  .add-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .add-row input[type=text] {
+    flex: 1; min-width: 160px; padding: 11px 14px; border: 1.5px solid var(--rule); border-radius: 10px; font-size: 14px; background: var(--paper);
+  }
+  .swatch-row { display: flex; gap: 6px; align-items: center; }
+  .swatch {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+  }
+  .swatch.selected { border-color: var(--ink); }
+  .btn {
+    padding: 11px 18px; border-radius: 10px; border: none; font-weight: 600; font-size: 14px;
+    background: var(--ink); color: #fff; transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-amber { background: var(--amber); color: var(--ink); }
+  .btn-ghost { background: transparent; color: var(--ink-soft); border: 1.5px solid var(--rule); }
+  .btn-sm { padding: 7px 12px; font-size: 12.5px; border-radius: 8px; }
+  .btn-danger { background: var(--coral-bg); color: var(--coral); }
+
+  .subject-card { margin-bottom: 14px; }
+  .subject-head { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .subject-color-dot { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+  .subject-head h3 { font-family: var(--font-display); font-size: 16.5px; font-weight: 700; flex: 1; }
+  .subject-progress-mini { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-soft); }
+  .progress-track { height: 6px; background: var(--rule); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+
+  .topics-list { margin-top: 16px; display: none; flex-direction: column; gap: 10px; }
+  .topics-list.open { display: flex; }
+  .topic-row {
+    display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid var(--rule); border-radius: 10px;
+  }
+  .topic-row input[type=checkbox] { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--sage); flex-shrink: 0; }
+  .topic-row .topic-body { flex: 1; }
+  .topic-row .topic-title { font-weight: 600; font-size: 14px; }
+  .topic-row .topic-title.done { text-decoration: line-through; color: var(--ink-soft); }
+  .topic-row .topic-notes { font-size: 13px; color: var(--ink-soft); margin-top: 4px; white-space: pre-wrap; }
+  .topic-row .topic-actions { display: flex; gap: 6px; }
+
+  .add-topic-form { margin-top: 14px; padding: 14px; background: var(--bg); border-radius: 10px; display: none; }
+  .add-topic-form.open { display: block; }
+  .add-topic-form input, .add-topic-form textarea {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--rule); border-radius: 8px; font-size: 13.5px; margin-bottom: 8px; background: var(--paper);
+  }
+  .add-topic-form textarea { min-height: 70px; resize: vertical; }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--ink-soft); }
+  .empty-state .big-emoji { font-size: 40px; margin-bottom: 10px; }
+
+  /* ---------- Planner ---------- */
+  .timer-wrap { display: flex; gap: 24px; flex-wrap: wrap; }
+  .timer-card { flex: 1; min-width: 280px; text-align: center; padding: 34px 20px; }
+  .ring-wrap { position: relative; width: 220px; height: 220px; margin: 0 auto 18px; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--rule); stroke-width: 10; }
+  .ring-progress { fill: none; stroke: var(--amber-deep); stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.3s linear; }
+  .timer-display {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-family: var(--font-mono); font-size: 40px; font-weight: 600;
+  }
+  .timer-mode-lbl { font-size: 12.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-soft); font-weight: 700; margin-bottom: 6px; }
+  .timer-controls { display: flex; gap: 10px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
+  .mode-switch { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+  .mode-switch button {
+    background: var(--bg); border: 1.5px solid var(--rule); padding: 7px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft);
+  }
+  .mode-switch button.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .goal-card { flex: 1; min-width: 260px; }
+  .goal-card h3 { font-family: var(--font-display); font-size: 15.5px; margin-bottom: 4px; }
+  .goal-row { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+  .goal-row input[type=number] { width: 70px; padding: 8px 10px; border: 1.5px solid var(--rule); border-radius: 8px; }
+  .today-progress { margin-top: 18px; }
+  .session-log { margin-top: 20px; font-size: 13px; }
+  .session-log .log-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--rule); color: var(--ink-soft); }
+
+  /* ---------- Flashcards ---------- */
+  .fc-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .fc-toolbar select { padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--rule); font-size: 14px; background: var(--paper); }
+  .flash-stage { display: flex; flex-direction: column; align-items: center; }
+  .flashcard {
+    width: 100%; max-width: 480px; height: 260px; perspective: 1200px; cursor: pointer;
+  }
+  .flashcard-inner {
+    position: relative; width: 100%; height: 100%; transition: transform 0.5s; transform-style: preserve-3d;
+  }
+  .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+  .fc-face {
+    position: absolute; inset: 0; backface-visibility: hidden; border-radius: 18px;
+    display: flex; align-items: center; justify-content: center; text-align: center; padding: 30px;
+    box-shadow: var(--shadow-lg);
+  }
+  .fc-front { background: var(--paper); font-family: var(--font-display); font-size: 21px; font-weight: 700; }
+  .fc-back { background: var(--ink); color: #fff; transform: rotateY(180deg); font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; overflow-y: auto; }
+  .fc-hint { font-size: 12px; color: var(--ink-soft); margin-top: 12px; }
+  .fc-nav { display: flex; gap: 14px; align-items: center; margin-top: 20px; }
+  .fc-count { font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- Exams ---------- */
+  .exam-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 22px; }
+  .exam-form input { padding: 11px 14px; border: 1.5px solid var(--rule); border-radius: 10px; font-size: 14px; background: var(--paper); }
+  .exam-item {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 12px; margin-bottom: 10px;
+  }
+  .exam-days-badge {
+    font-family: var(--font-mono); font-weight: 700; font-size: 17px; width: 56px; height: 56px; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; line-height: 1.1;
+  }
+  .exam-days-badge span { font-size: 9px; font-weight: 600; text-transform: uppercase; }
+  .exam-item .exam-info { flex: 1; }
+  .exam-item .exam-info .nm { font-weight: 700; font-size: 14.5px; }
+  .exam-item .exam-info .dt { font-size: 12.5px; color: var(--ink-soft); }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 780px) {
+    body { flex-direction: column; }
+    #sidebar {
+      width: 100%; height: auto; position: sticky; top: 0; z-index: 10;
+      flex-direction: row; align-items: center; padding: 10px 12px; overflow-x: auto;
+    }
+    .brand { padding: 0 10px 0 2px; }
+    nav { flex-direction: row; gap: 4px; }
+    .nav-btn span.label { display: none; }
+    .nav-btn { padding: 10px; }
+    .sidebar-footer { display: none; }
+    #main { padding: 20px 16px 90px; }
+    .home-grid { grid-template-columns: 1fr; }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .exam-form { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="brand"><span class="dot"></span> Smart Ed</div>
+  <nav>
+    <button class="nav-btn active" data-view="home"><span class="ic">🏠</span><span class="label">Home</span></button>
+    <button class="nav-btn" data-view="subjects"><span class="ic">📚</span><span class="label">Subjects</span></button>
+    <button class="nav-btn" data-view="planner"><span class="ic">⏱️</span><span class="label">Planner</span></button>
+    <button class="nav-btn" data-view="flashcards"><span class="ic">🗂️</span><span class="label">Flashcards</span></button>
+    <button class="nav-btn" data-view="exams"><span class="ic">📅</span><span class="label">Exams</span></button>
+  </nav>
+  <div class="sidebar-footer">Your data stays on this device.</div>
+</div>
+
+<div id="main">
+
+  <!-- HOME -->
+  <section class="view active" id="view-home">
+    <h1 class="page-title">Welcome back 👋</h1>
+    <p class="page-sub">Here's how your studying is going.</p>
+
+    <div class="home-grid">
+      <div class="card greeting-card">
+        <div class="greeting-name-row">
+          <h2>Hey,</h2>
+          <input id="studentNameInput" type="text" value="Student" maxlength="18">
+        </div>
+        <p id="quoteText"></p>
+        <div class="quote-tag">✦ Today's reminder</div>
+      </div>
+      <div class="card exam-countdown-card" id="examCountdownCard"></div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-box"><div class="num" id="statSubjects">0</div><div class="lbl">Subjects</div></div>
+      <div class="stat-box"><div class="num" id="statDone">0%</div><div class="lbl">Topics mastered</div></div>
+      <div class="stat-box"><div class="num" id="statMinutes">0m</div><div class="lbl">Studied today</div></div>
+    </div>
+
+    <div class="shelf-title">Your bookshelf</div>
+    <div class="shelf-wrap">
+      <div class="shelf" id="bookshelf"></div>
+    </div>
+  </section>
+
+  <!-- SUBJECTS -->
+  <section class="view" id="view-subjects">
+    <h1 class="page-title">Subjects</h1>
+    <p class="page-sub">Add a subject, then fill it with topics and notes — this becomes your revision material later.</p>
+
+    <div class="add-row">
+      <input type="text" id="newSubjectInput" placeholder="e.g. Chemistry, History, Algebra…">
+      <div class="swatch-row" id="colorSwatches"></div>
+      <button class="btn btn-amber" id="addSubjectBtn">+ Add Subject</button>
+    </div>
+
+    <div id="subjectsList"></div>
+  </section>
+
+  <!-- PLANNER -->
+  <section class="view" id="view-planner">
+    <h1 class="page-title">Study Planner</h1>
+    <p class="page-sub">Focus in short bursts. Log your sessions and track your daily goal.</p>
+
+    <div class="timer-wrap">
+      <div class="card timer-card">
+        <div class="mode-switch">
+          <button class="mode-btn active" data-mins="25" data-label="Focus">Focus 25</button>
+          <button class="mode-btn" data-mins="5" data-label="Short break">Break 5</button>
+          <button class="mode-btn" data-mins="15" data-label="Long break">Break 15</button>
+        </div>
+        <div class="timer-mode-lbl" id="timerModeLbl">Focus</div>
+        <div class="ring-wrap">
+          <svg width="220" height="220" viewBox="0 0 220 220">
+            <circle class="ring-bg" cx="110" cy="110" r="96"></circle>
+            <circle class="ring-progress" id="ringProgress" cx="110" cy="110" r="96" stroke-dasharray="603.2" stroke-dashoffset="0"></circle>
+          </svg>
+          <div class="timer-display" id="timerDisplay">25:00</div>
+        </div>
+        <div class="timer-controls">
+          <button class="btn btn-amber" id="timerStartBtn">▶ Start</button>
+          <button class="btn btn-ghost" id="timerResetBtn">↺ Reset</button>
+        </div>
+      </div>
+
+      <div class="card goal-card">
+        <h3>Daily study goal</h3>
+        <div class="goal-row">
+          <span style="font-size:13.5px; color:var(--ink-soft)">Goal:</span>
+          <input type="number" id="dailyGoalInput" min="10" step="5" value="60">
+          <span style="font-size:13.5px; color:var(--ink-soft)">minutes / day</span>
+          <button class="btn btn-sm" id="saveGoalBtn">Save</button>
+        </div>
+        <div class="today-progress">
+          <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--ink-soft); margin-bottom:6px;">
+            <span id="todayMinutesLbl">0 min today</span>
+            <span id="goalPctLbl">0%</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="goalProgressFill" style="background:var(--sage); width:0%;"></div></div>
+        </div>
+        <div class="session-log" id="sessionLog"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLASHCARDS -->
+  <section class="view" id="view-flashcards">
+    <h1 class="page-title">Flashcard Revision</h1>
+    <p class="page-sub">Turn your topic notes into quick flip-cards — great before an exam, and long after.</p>
+
+    <div class="fc-toolbar">
+      <select id="fcSubjectSelect"></select>
+      <button class="btn btn-ghost btn-sm" id="fcShuffleBtn">🔀 Shuffle</button>
+    </div>
+
+    <div class="flash-stage" id="flashStage"></div>
+  </section>
+
+  <!-- EXAMS -->
+  <section class="view" id="view-exams">
+    <h1 class="page-title">Exam Schedule</h1>
+    <p class="page-sub">Add upcoming exams to see a live countdown on your home screen.</p>
+
+    <div class="exam-form">
+      <input type="text" id="examNameInput" placeholder="Exam name (e.g. Physics Midterm)">
+      <input type="date" id="examDateInput">
+      <button class="btn btn-amber" id="addExamBtn">+ Add Exam</button>
+    </div>
+
+    <div id="examsList"></div>
+  </section>
+
+</div>
+
+<script>
+/* ============ Storage helpers ============ */
+const STORE_KEY = 'smartEdu_v1';
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {
+    studentName: 'Student',
+    dailyGoal: 60,
+    subjects: [],
+    exams: [],
+    sessions: [] // {date: 'YYYY-MM-DD', minutes: n}
+  };
+}
+function saveData() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+let data = loadData();
+
+const SUBJECT_COLORS = ['#7C6FE0', '#E8604C', '#3F9B6A', '#FFC857', '#3E9DBE', '#D65DB1'];
+const QUOTES = [
+  "Small steps every day beat one big push the night before.",
+  "You don't have to be perfect — you just have to start.",
+  "Revisiting a topic twice beats cramming it once.",
+  "Your notes today are your shortcut tomorrow.",
+  "Progress, not perfection. One topic at a time.",
+  "Future you will thank you for the notes you write now.",
+  "Rest is part of studying, not a break from it."
+];
+
+/* ============ Navigation ============ */
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
+});
+function switchView(view) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + view));
+  if (view === 'flashcards') renderFlashcards();
+}
+
+/* ============ Home ============ */
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function renderHome() {
+  document.getElementById('studentNameInput').value = data.studentName;
+  document.getElementById('quoteText').textContent = QUOTES[new Date().getDate() % QUOTES.length];
+
+  // stats
+  document.getElementById('statSubjects').textContent = data.subjects.length;
+  let totalTopics = 0, doneTopics = 0;
+  data.subjects.forEach(s => { totalTopics += s.topics.length; doneTopics += s.topics.filter(t => t.done).length; });
+  document.getElementById('statDone').textContent = totalTopics ? Math.round(doneTopics / totalTopics * 100) + '%' : '0%';
+  const todayMinutes = data.sessions.filter(s => s.date === todayStr()).reduce((a, b) => a + b.minutes, 0);
+  document.getElementById('statMinutes').textContent = todayMinutes + 'm';
+
+  // exam countdown
+  const upcoming = [...data.exams].filter(e => daysUntil(e.date) >= 0).sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+  const card = document.getElementById('examCountdownCard');
+  if (upcoming) {
+    const d = daysUntil(upcoming.date);
+    card.innerHTML = `
+      <div class="label">Next exam</div>
+      <div class="big-num">${d === 0 ? 'Today' : d + 'd'}</div>
+      <div class="exam-name">${escapeHtml(upcoming.name)}</div>
+      <div class="exam-date">${formatDate(upcoming.date)}</div>
+    `;
+  } else {
+    card.innerHTML = `<div class="label">Next exam</div><p class="no-exam" style="margin-top:10px;">No exams scheduled. Add one in the Exams tab.</p>`;
+  }
+
+  // bookshelf
+  const shelf = document.getElementById('bookshelf');
+  if (!data.subjects.length) {
+    shelf.innerHTML = `<div class="empty-shelf">Your shelf is empty — add a subject to see it appear here as a book 📖</div>`;
+  } else {
+    shelf.innerHTML = data.subjects.map(s => {
+      const pct = s.topics.length ? Math.round(s.topics.filter(t => t.done).length / s.topics.length * 100) : 0;
+      return `
+        <div class="book" data-subject="${s.id}" title="${escapeHtml(s.name)} — ${pct}% complete">
+          <div class="pct-badge">${pct}%</div>
+          <div class="fill" style="height:${pct}%; background:${s.color};"></div>
+          <div class="spine-label" style="mix-blend-mode:${pct < 30 ? 'difference' : 'normal'}">${escapeHtml(s.name)}</div>
+        </div>`;
+    }).join('');
+    shelf.querySelectorAll('.book').forEach(b => {
+      b.addEventListener('click', () => {
+        switchView('subjects');
+        setTimeout(() => {
+          const el = document.querySelector(`.subject-card[data-id="${b.dataset.subject}"]`);
+          if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); openSubject(b.dataset.subject, true); }
+        }, 50);
+      });
+    });
+  }
+}
+document.getElementById('studentNameInput').addEventListener('input', e => {
+  data.studentName = e.target.value || 'Student';
+  saveData();
+});
+
+function daysUntil(dateStr) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr + 'T00:00:00');
+  return Math.round((target - today) / 86400000);
+}
+function formatDate(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function escapeHtml(str) {
+  const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+}
+
+/* ============ Subjects ============ */
+let selectedColor = SUBJECT_COLORS[0];
+function renderColorSwatches() {
+  const wrap = document.getElementById('colorSwatches');
+  wrap.innerHTML = SUBJECT_COLORS.map(c => `<div class="swatch ${c === selectedColor ? 'selected' : ''}" style="background:${c}" data-color="${c}"></div>`).join('');
+  wrap.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => { selectedColor = s.dataset.color; renderColorSwatches(); }));
+}
+renderColorSwatches();
+
+document.getElementById('addSubjectBtn').addEventListener('click', () => {
+  const input = document.getElementById('newSubjectInput');
+  const name = input.value.trim();
+  if (!name) return;
+  data.subjects.push({ id: 's' + Date.now(), name, color: selectedColor, topics: [], open: true });
+  input.value = '';
+  saveData(); renderAll();
+});
+document.getElementById('newSubjectInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('addSubjectBtn').click(); });
+
+function renderSubjects() {
+  const list = document.getElementById('subjectsList');
+  if (!data.subjects.length) {
+    list.innerHTML = `<div class="empty-state"><div class="big-emoji">📘</div>Add your first subject above to get started.</div>`;
+    return;
+  }
+  list.innerHTML = data.subjects.map(s => {
+    const pct = s.topics.length ? Math.round(s.topics.filter(t => t.done).length / s.topics.length * 100) : 0;
+    return `
+    <div class="card subject-card" data-id="${s.id}">
+      <div class="subject-head" data-toggle="${s.id}">
+        <div class="subject-color-dot" style="background:${s.color}"></div>
+        <h3>${escapeHtml(s.name)}</h3>
+        <div class="subject-progress-mini">${s.topics.filter(t=>t.done).length}/${s.topics.length} · ${pct}%</div>
+        <button class="btn btn-sm btn-danger" data-del-subject="${s.id}">Delete</button>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${s.color};"></div></div>
+      <div class="topics-list ${s.open ? 'open' : ''}" id="topics-${s.id}">
+        ${s.topics.map(t => `
+          <div class="topic-row">
+            <input type="checkbox" ${t.done ? 'checked' : ''} data-toggle-topic="${s.id}|${t.id}">
+            <div class="topic-body">
+              <div class="topic-title ${t.done ? 'done' : ''}">${escapeHtml(t.title)}</div>
+              ${t.notes ? `<div class="topic-notes">${escapeHtml(t.notes)}</div>` : ''}
+            </div>
+            <div class="topic-actions">
+              <button class="btn btn-sm btn-danger" data-del-topic="${s.id}|${t.id}">✕</button>
+            </div>
+          </div>
+        `).join('') || '<p style="color:var(--ink-soft); font-size:13px;">No topics yet.</p>'}
+
+        <div class="add-topic-form open" data-topic-form="${s.id}">
+          <input type="text" placeholder="Topic title (e.g. Newton's Laws)" data-topic-title="${s.id}">
+          <textarea placeholder="Notes / study material for this topic…" data-topic-notes="${s.id}"></textarea>
+          <button class="btn btn-sm btn-amber" data-add-topic="${s.id}">+ Add Topic</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // wire events
+  list.querySelectorAll('[data-toggle]').forEach(el => el.addEventListener('click', () => openSubject(el.dataset.toggle)));
+  list.querySelectorAll('[data-del-subject]').forEach(el => el.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    data.subjects = data.subjects.filter(s => s.id !== el.dataset.delSubject);
+    saveData(); renderAll();
+  }));
+  list.querySelectorAll('[data-toggle-topic]').forEach(el => el.addEventListener('change', () => {
+    const [sid, tid] = el.dataset.toggleTopic.split('|');
+    const subj = data.subjects.find(s => s.id === sid);
+    const topic = subj.topics.find(t => t.id === tid);
+    topic.done = el.checked;
+    saveData(); renderSubjects(); renderHomeStatsOnly();
+  }));
+  list.querySelectorAll('[data-del-topic]').forEach(el => el.addEventListener('click', () => {
+    const [sid, tid] = el.dataset.delTopic.split('|');
+    const subj = data.subjects.find(s => s.id === sid);
+    subj.topics = subj.topics.filter(t => t.id !== tid);
+    saveData(); renderSubjects();
+  }));
+  list.querySelectorAll('[data-add-topic]').forEach(el => el.addEventListener('click', () => {
+    const sid = el.dataset.addTopic;
+    const titleInput = list.querySelector(`[data-topic-title="${sid}"]`);
+    const notesInput = list.querySelector(`[data-topic-notes="${sid}"]`);
+    const title = titleInput.value.trim();
+    if (!title) return;
+    const subj = data.subjects.find(s => s.id === sid);
+    subj.topics.push({ id: 't' + Date.now(), title, notes: notesInput.value.trim(), done: false });
+    saveData(); renderSubjects();
+  }));
+}
+function openSubject(id, forceOpen) {
+  const subj = data.subjects.find(s => s.id === id);
+  subj.open = forceOpen ? true : !subj.open;
+  saveData(); renderSubjects();
+}
+function renderHomeStatsOnly() { renderHome(); }
+
+/* ============ Planner (Pomodoro) ============ */
+let timerTotalSeconds = 25 * 60;
+let timerRemaining = timerTotalSeconds;
+let timerInterval = null;
+let timerRunning = false;
+let currentModeLabel = 'Focus';
+const RING_CIRC = 2 * Math.PI * 96;
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (timerRunning) return;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    timerTotalSeconds = parseInt(btn.dataset.mins) * 60;
+    timerRemaining = timerTotalSeconds;
+    currentModeLabel = btn.dataset.label;
+    document.getElementById('timerModeLbl').textContent = currentModeLabel;
+    updateTimerDisplay();
+  });
+});
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerRemaining / 60).toString().padStart(2, '0');
+  const s = (timerRemaining % 60).toString().padStart(2, '0');
+  document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+  const progress = 1 - (timerRemaining / timerTotalSeconds);
+  document.getElementById('ringProgress').style.strokeDasharray = RING_CIRC;
+  document.getElementById('ringProgress').style.strokeDashoffset = RING_CIRC * (1 - progress);
+}
+document.getElementById('ringProgress').setAttribute('stroke-dasharray', RING_CIRC);
+
+document.getElementById('timerStartBtn').addEventListener('click', () => {
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('timerStartBtn').textContent = '▶ Start';
+  } else {
+    timerRunning = true;
+    document.getElementById('timerStartBtn').textContent = '⏸ Pause';
+    timerInterval = setInterval(() => {
+      timerRemaining--;
+      updateTimerDisplay();
+      if (timerRemaining <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('timerStartBtn').textContent = '▶ Start';
+        if (currentModeLabel === 'Focus') logSession(Math.round(timerTotalSeconds / 60));
+        timerRemaining = timerTotalSeconds;
+        updateTimerDisplay();
+      }
+    }, 1000);
+  }
+});
+document.getElementById('timerResetBtn').addEventListener('click', () => {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('timerStartBtn').textContent = '▶ Start';
+  timerRemaining = timerTotalSeconds;
+  updateTimerDisplay();
+});
+
+function logSession(minutes) {
+  const t = todayStr();
+  let entry = data.sessions.find(s => s.date === t);
+  if (entry) entry.minutes += minutes; else data.sessions.push({ date: t, minutes });
+  saveData();
+  renderPlanner(); renderHomeStatsOnly();
+}
+
+document.getElementById('saveGoalBtn').addEventListener('click', () => {
+  const v = parseInt(document.getElementById('dailyGoalInput').value) || 60;
+  data.dailyGoal = v; saveData(); renderPlanner();
+});
+
+function renderPlanner() {
+  document.getElementById('dailyGoalInput').value = data.dailyGoal;
+  const todayMinutes = data.sessions.filter(s => s.date === todayStr()).reduce((a, b) => a + b.minutes, 0);
+  document.getElementById('todayMinutesLbl').textContent = `${todayMinutes} min today`;
+  const pct = Math.min(100, Math.round(todayMinutes / data.dailyGoal * 100));
+  document.getElementById('goalPctLbl').textContent = pct + '%';
+  document.getElementById('goalProgressFill').style.width = pct + '%';
+
+  const recent = [...data.sessions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+  document.getElementById('sessionLog').innerHTML = recent.length
+    ? recent.map(s => `<div class="log-row"><span>${formatDate(s.date)}</span><span>${s.minutes} min</span></div>`).join('')
+    : '<p style="color:var(--ink-soft); font-size:13px;">No sessions logged yet — finish a focus timer to log one.</p>';
+  updateTimerDisplay();
+}
+
+/* ============ Flashcards ============ */
+let fcCards = [];
+let fcIndex = 0;
+
+function populateFcSubjectSelect() {
+  const sel = document.getElementById('fcSubjectSelect');
+  const withNotes = data.subjects.filter(s => s.topics.some(t => t.notes));
+  sel.innerHTML = withNotes.length
+    ? withNotes.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')
+    : '<option value="">No subjects with notes yet</option>';
+}
+document.getElementById('fcSubjectSelect').addEventListener('change', () => renderFlashcards());
+document.getElementById('fcShuffleBtn').addEventListener('click', () => {
+  fcCards.sort(() => Math.random() - 0.5);
+  fcIndex = 0;
+  renderFlashStage();
+});
+
+function renderFlashcards() {
+  populateFcSubjectSelect();
+  const sid = document.getElementById('fcSubjectSelect').value;
+  const subj = data.subjects.find(s => s.id === sid);
+  fcCards = subj ? subj.topics.filter(t => t.notes) : [];
+  fcIndex = 0;
+  renderFlashStage();
+}
+
+function renderFlashStage() {
+  const stage = document.getElementById('flashStage');
+  if (!fcCards.length) {
+    stage.innerHTML = `<div class="empty-state"><div class="big-emoji">🗂️</div>Add topics with notes in the Subjects tab to generate flashcards.</div>`;
+    return;
+  }
+  const card = fcCards[fcIndex];
+  stage.innerHTML = `
+    <div class="flashcard" id="flashcardEl">
+      <div class="flashcard-inner">
+        <div class="fc-face fc-front">${escapeHtml(card.title)}</div>
+        <div class="fc-face fc-back">${escapeHtml(card.notes)}</div>
+      </div>
+    </div>
+    <div class="fc-hint">Tap the card to flip</div>
+    <div class="fc-nav">
+      <button class="btn btn-ghost btn-sm" id="fcPrev">← Prev</button>
+      <span class="fc-count">${fcIndex + 1} / ${fcCards.length}</span>
+      <button class="btn btn-ghost btn-sm" id="fcNext">Next →</button>
+    </div>
+  `;
+  document.getElementById('flashcardEl').addEventListener('click', function () { this.classList.toggle('flipped'); });
+  document.getElementById('fcPrev').addEventListener('click', () => { fcIndex = (fcIndex - 1 + fcCards.length) % fcCards.length; renderFlashStage(); });
+  document.getElementById('fcNext').addEventListener('click', () => { fcIndex = (fcIndex + 1) % fcCards.length; renderFlashStage(); });
+}
+
+/* ============ Exams ============ */
+document.getElementById('addExamBtn').addEventListener('click', () => {
+  const nameInput = document.getElementById('examNameInput');
+  const dateInput = document.getElementById('examDateInput');
+  if (!nameInput.value.trim() || !dateInput.value) return;
+  data.exams.push({ id: 'e' + Date.now(), name: nameInput.value.trim(), date: dateInput.value });
+  nameInput.value = ''; dateInput.value = '';
+  saveData(); renderExams(); renderHomeStatsOnly();
+});
+
+function renderExams() {
+  const list = document.getElementById('examsList');
+  const sorted = [...data.exams].sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (!sorted.length) {
+    list.innerHTML = `<div class="empty-state"><div class="big-emoji">📅</div>No exams added yet.</div>`;
+    return;
+  }
+  list.innerHTML = sorted.map(e => {
+    const d = daysUntil(e.date);
+    const past = d < 0;
+    const badgeBg = past ? 'var(--rule)' : d <= 3 ? 'var(--coral-bg)' : 'var(--sage-bg)';
+    const badgeColor = past ? 'var(--ink-soft)' : d <= 3 ? 'var(--coral)' : 'var(--sage)';
+    return `
+      <div class="exam-item">
+        <div class="exam-days-badge" style="background:${badgeBg}; color:${badgeColor};">
+          ${past ? 'done' : d}<span>${past ? '' : (d === 1 ? 'day' : 'days')}</span>
+        </div>
+        <div class="exam-info">
+          <div class="nm">${escapeHtml(e.name)}</div>
+          <div class="dt">${formatDate(e.date)}</div>
+        </div>
+        <button class="btn btn-sm btn-danger" data-del-exam="${e.id}">Delete</button>
+      </div>`;
+  }).join('');
+  list.querySelectorAll('[data-del-exam]').forEach(el => el.addEventListener('click', () => {
+    data.exams = data.exams.filter(e => e.id !== el.dataset.delExam);
+    saveData(); renderExams(); renderHomeStatsOnly();
+  }));
+}
+
+/* ============ Init ============ */
+function renderAll() {
+  renderHome();
+  renderSubjects();
+  renderPlanner();
+  renderExams();
+}
+renderAll();
+updateTimerDisplay();
+</script>
+
+</body>
+</html>
